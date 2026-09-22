@@ -30,18 +30,27 @@ app.include_router(api_router)
 
 # Mount static and uploaded files
 STATIC_DIR = BASE_DIR / "app" / "static"
+if not STATIC_DIR.exists():
+    STATIC_DIR = Path(__file__).resolve().parent / "static"
+
 try:
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-except OSError:
+except Exception:
     pass
 
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+try:
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
+
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR), check_dir=False), name="static")
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR), check_dir=False), name="uploads")
 
 
 @app.get("/")
 async def get_index():
     """Serve the primary competition dashboard UI."""
     index_path = BASE_DIR / "app" / "templates" / "index.html"
+    if not index_path.exists():
+        index_path = Path(__file__).resolve().parent / "templates" / "index.html"
     return FileResponse(str(index_path))
