@@ -137,7 +137,12 @@ THE 2047 is configured for seamless deployment on free-tier Python hosting platf
 2. Click **New Project** → **Deploy from GitHub repo** → select `2047_image_judging_engine`.
 3. Railway automatically detects the `Procfile` and launches the application.
 
-### Option 3: Deploy with Docker
+### Option 3: Deploy on Vercel
+1. Go to [Vercel.com](https://vercel.com) and sign in with GitHub.
+2. Click **Add New...** → **Project** → Import `2047_image_judging_engine`.
+3. Vercel automatically detects `vercel.json` and `api/index.py`. Click **Deploy**!
+
+### Option 4: Deploy with Docker
 ```bash
 docker build -t the-2047-engine .
 docker run -p 8000:8000 the-2047-engine

@@ -3,17 +3,38 @@ Application configuration for THE 2047 - AI Image Comparison & Judging Engine.
 """
 from pathlib import Path
 
+import os
+import tempfile
+
 # Base directories
 BASE_DIR = Path(__file__).resolve().parent.parent
-UPLOAD_DIR = BASE_DIR / "uploads"
+
+# Detect serverless / read-only filesystem (Vercel)
+if os.getenv("VERCEL") or not os.access(BASE_DIR, os.W_OK):
+    TEMP_BASE = Path(tempfile.gettempdir()) / "the_2047"
+    UPLOAD_DIR = TEMP_BASE / "uploads"
+    SESSIONS_DIR = TEMP_BASE / "sessions"
+else:
+    UPLOAD_DIR = BASE_DIR / "uploads"
+    SESSIONS_DIR = BASE_DIR / "sessions"
+
 REF_UPLOAD_DIR = UPLOAD_DIR / "reference"
 PART_UPLOAD_DIR = UPLOAD_DIR / "participants"
-SESSIONS_DIR = BASE_DIR / "sessions"
 
-# Ensure upload and session directories exist
-REF_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-PART_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+# Ensure upload and session directories exist safely
+try:
+    REF_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    PART_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    TEMP_BASE = Path(tempfile.gettempdir()) / "the_2047"
+    UPLOAD_DIR = TEMP_BASE / "uploads"
+    REF_UPLOAD_DIR = UPLOAD_DIR / "reference"
+    PART_UPLOAD_DIR = UPLOAD_DIR / "participants"
+    SESSIONS_DIR = TEMP_BASE / "sessions"
+    REF_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    PART_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Validation limits
 MAX_PARTICIPANT_IMAGES = 60
@@ -36,8 +57,6 @@ CATEGORY_WEIGHTS = {
     "fine_details": 10.0,
 }
 TOTAL_POINTS = 100.0
-
-import os
 
 # Server configuration
 HOST = os.getenv("HOST", "0.0.0.0")
