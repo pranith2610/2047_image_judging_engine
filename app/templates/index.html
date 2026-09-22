@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE 2047 — AI Image Comparison & Judging Engine</title>
+    <meta name="description" content="Official multi-dimensional AI image recreation evaluation platform for THE 2047 competition. Evaluates up to 60 participants across semantic, object, composition, color, and detail fidelity out of 100 points.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="cyber-theme">
+    <!-- Ambient background glow elements -->
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    <div class="grid-overlay"></div>
+
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand-block">
+                <div class="brand-symbol">
+                    <span class="symbol-year">2047</span>
+                    <span class="symbol-pulse"></span>
+                </div>
+                <div>
+                    <h1 class="brand-title">THE 2047</h1>
+                    <p class="brand-subtitle">AI IMAGE COMPARISON & JUDGING ENGINE</p>
+                </div>
+            </div>
+
+            <!-- Live Status HUD -->
+            <div class="header-hud">
+                <div class="hud-pill" id="hudRefPill">
+                    <span class="hud-dot dot-gray" id="hudRefDot"></span>
+                    <span class="hud-label">REFERENCE:</span>
+                    <span class="hud-value" id="hudRefStatus">NONE</span>
+                </div>
+                <div class="hud-pill" id="hudPartPill">
+                    <span class="hud-label">PARTICIPANTS:</span>
+                    <span class="hud-value text-cyan" id="hudPartStatus">0 / 60</span>
+                </div>
+                <div class="hud-pill" id="hudEnginePill">
+                    <span class="pulse-indicator"></span>
+                    <span class="hud-label">STATUS:</span>
+                    <span class="hud-value" id="systemStatus">READY</span>
+                </div>
+                <div class="hud-pill hud-pill-organizer">
+                    <span class="hud-label">MODE:</span>
+                    <span class="hud-value text-accent">ORGANIZER</span>
+                </div>
+                <button type="button" class="hud-pill hud-pill-calib btn-hud-calib" id="btnOpenCalibration" title="Open Developer / Calibration Diagnostics">
+                    <span class="hud-label">CALIBRATION:</span>
+                    <span class="hud-value text-purple">INSPECT</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Master Competition Control Toolbar -->
+    <div class="competition-toolbar-wrapper">
+        <div class="competition-toolbar">
+            <div class="toolbar-group">
+                <button type="button" class="btn btn-secondary" id="btnNewSession" title="Start fresh judging session">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-5h5"/>
+                    </svg>
+                    New Session
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnToolbarUploadRef">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Upload Reference
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnToolbarUploadPart">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Upload Participants
+                </button>
+            </div>
+
+            <div class="toolbar-group toolbar-group-primary">
+                <button type="button" class="btn btn-primary btn-glow" id="btnExecuteCompare" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <span>ANALYZE ALL</span>
+                </button>
+            </div>
+
+            <div class="toolbar-group">
+                <button type="button" class="btn btn-secondary" id="btnSaveSession" title="Save session state to disk">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Session
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnLoadSession" title="Load saved session">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Load Session
+                </button>
+                <input type="file" id="sessionFileInput" accept=".json" class="file-input-hidden">
+            </div>
+        </div>
+    </div>
+
+    <main class="main-layout">
+        <!-- Scoring categories banner -->
+        <section class="rules-banner" id="scoringBanner">
+            <div class="rule-chip"><span class="chip-num">30 PTS</span> Semantic / Overall Similarity</div>
+            <div class="rule-chip"><span class="chip-num">25 PTS</span> Object / Element Accuracy (Weighted)</div>
+            <div class="rule-chip"><span class="chip-num">20 PTS</span> Composition & Spatial Arrangement</div>
+            <div class="rule-chip"><span class="chip-num">15 PTS</span> Color & Lighting</div>
+            <div class="rule-chip"><span class="chip-num">10 PTS</span> Fine Details & Textures</div>
+        </section>
+
+        <!-- Studio Workbench -->
+        <div class="workbench-grid" id="workbenchGrid">
+            <!-- Left: Reference Master Panel -->
+            <section class="card panel-reference" id="refCard">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="step-tag">01</span>
+                        <h2>Original Reference Image</h2>
+                    </div>
+                    <span class="badge badge-accent">Master Anchor</span>
+                </div>
+                <p class="card-desc">The master image participants memorized during the 30-second observation phase.</p>
+
+                <!-- Dropzone for Reference -->
+                <div class="dropzone" id="refDropzone">
+                    <input type="file" id="refFileInput" accept=".jpg,.jpeg,.png,.webp" class="file-input-hidden">
+                    <div class="dropzone-empty" id="refDropzoneEmpty">
+                        <div class="drop-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </div>
+                        <p class="drop-primary">Drag & drop Reference Image here</p>
+                        <p class="drop-secondary">or <span class="drop-browse">browse from computer</span></p>
+                        <span class="drop-hints">Supports JPG, PNG, WEBP (Max 15MB)</span>
+                    </div>
+
+                    <!-- Active Reference Preview -->
+                    <div class="preview-container hidden" id="refPreviewContainer">
+                        <div class="preview-frame">
+                            <img id="refPreviewImg" src="" alt="Reference Image Preview">
+                            <button type="button" class="btn-icon btn-replace" id="refReplaceBtn" title="Replace reference image">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="file-meta" id="refMeta">
+                            <span class="meta-tag" id="refFilename">reference.png</span>
+                            <span class="meta-tag" id="refDimensions">1920x1080</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Reference Profile HUD -->
+                <div class="reference-profile-hud hidden" id="refProfileHud">
+                    <div class="hud-header">
+                        <span class="hud-title">STRUCTURED REFERENCE PROFILE</span>
+                        <span class="hud-tag" id="refProfileId">REF-001</span>
+                    </div>
+
+                    <!-- Dominant Colors -->
+                    <div class="profile-section">
+                        <label class="section-label">Dominant Color Palette</label>
+                        <div class="palette-swatches" id="refPaletteSwatches">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Key Weighted Elements -->
+                    <div class="profile-section">
+                        <label class="section-label">Identified Salient Elements & Importance</label>
+                        <div class="elements-list" id="refElementsList">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Composition & Lighting Metrics -->
+                    <div class="profile-metrics-row">
+                        <div class="metric-item">
+                            <span class="metric-key">Lighting</span>
+                            <span class="metric-val" id="refLightingVal">--</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-key">Composition</span>
+                            <span class="metric-val" id="refCompositionVal">--</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-key">Focal Center</span>
+                            <span class="metric-val" id="refFocalVal">--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right: Participant Batch Panel -->
+            <section class="card panel-participants" id="participantsCard">
+                <div class="card-header">
+                    <div class="card-title-group">
+                        <span class="step-tag">02</span>
+                        <h2>Participant Recreations</h2>
+                    </div>
+                    <div class="batch-counter-pill">
+                        <span id="participantCount">0</span> / 60 LOADED
+                    </div>
+                </div>
+                <p class="card-desc">Upload up to 60 competitor recreations (supports the 52 live event competitors). Assign custom Participant IDs distinct from filenames.</p>
+
+                <!-- Dropzone for Participants -->
+                <div class="dropzone dropzone-batch" id="partDropzone">
+                    <input type="file" id="partFileInput" accept=".jpg,.jpeg,.png,.webp" multiple class="file-input-hidden">
+                    <div class="drop-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <p class="drop-primary">Drop participant recreation images here</p>
+                    <p class="drop-secondary">or <span class="drop-browse">select files in batch</span></p>
+                    <span class="drop-hints">Upload multiple JPG, PNG, WEBP files up to 60 total (Max 15MB each)</span>
+                </div>
+
+                <!-- Active Participants Workspace -->
+                <div class="participants-toolbar hidden" id="participantsToolbar">
+                    <div class="toolbar-left">
+                        <span class="badge badge-subtle" id="uploadedBadge">0 IMAGES</span>
+                    </div>
+                    <div class="toolbar-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnAutoIndex">Auto-Index IDs (P01..P60)</button>
+                        <button type="button" class="btn btn-secondary btn-sm text-red" id="btnClearParticipants">Clear All</button>
+                    </div>
+                </div>
+
+                <!-- Grid of uploaded participant cards -->
+                <div class="participant-grid" id="participantGrid">
+                    <!-- Dynamic cards -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Real-Time Processing Screen HUD -->
+        <section class="card progress-hud hidden" id="progressHud">
+            <div class="progress-hud-header">
+                <div class="progress-title-wrap">
+                    <span class="spinner-cyber"></span>
+                    <h3 id="progressHudTitle">ANALYZING PARTICIPANTS</h3>
+                </div>
+                <div class="progress-stats">
+                    <span class="progress-counter" id="progressStatusText">Comparing images...</span>
+                    <span class="progress-badge" id="progressPercent">0%</span>
+                </div>
+            </div>
+            <div class="progress-track">
+                <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+            </div>
+
+            <!-- Pipeline Step Breakdown for active participant -->
+            <div class="active-pipeline-box" id="activePipelineBox">
+                <span class="active-p-label" id="activePLabel">Current: P01</span>
+                <div class="pipeline-steps-chips" id="pipelineStepsChips">
+                    <span class="step-chip step-done">✓ Loaded</span>
+                    <span class="step-chip step-done">✓ Features Extracted</span>
+                    <span class="step-chip step-active">⚡ Comparing</span>
+                    <span class="step-chip">○ Scoring</span>
+                    <span class="step-chip">○ Explaining</span>
+                </div>
+            </div>
+
+            <!-- Real-time checklist scroll -->
+            <div class="progress-log" id="progressLog">
+                <!-- Checklist badges injected in real-time -->
+            </div>
+        </section>
+
+        <!-- Final Results & Leaderboard Dashboard -->
+        <section class="results-station hidden" id="resultsStation">
+            <div class="results-header">
+                <div class="results-title-group">
+                    <span class="badge badge-accent">STAGE 06</span>
+                    <h2>🏆 FINAL COMPETITION RANKINGS</h2>
+                    <p class="text-muted" id="resultsSummaryText">Official deterministic evaluation across 5 visual categories.</p>
+                </div>
+            </div>
+
+            <!-- Compact Top Performers Section -->
+            <div class="top-performers-banner" id="topPerformersBanner">
+                <!-- Injected Top 3 cards -->
+            </div>
+
+            <!-- Full Ranking Table Container -->
+            <div class="table-container card">
+                <div class="table-toolbar">
+                    <div class="table-search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="tableFilterInput" placeholder="Search Participant ID or filename...">
+                    </div>
+
+                    <div class="filter-controls">
+                        <select class="cyber-select" id="tableFilterSelect">
+                            <option value="all">Filter: All Participants</option>
+                            <option value="top10">Top 10 Performers</option>
+                            <option value="top20">Top 20 Performers</option>
+                            <option value="score80">Score ≥ 80.0 (High Match)</option>
+                            <option value="score70">Score ≥ 70.0 (Strong Match)</option>
+                            <option value="score50">Score &lt; 50.0 (Low Match)</option>
+                            <option value="tied">Tied Participants Only</option>
+                        </select>
+
+                        <select class="cyber-select" id="tableSortSelect">
+                            <option value="score_desc">Sort: Final Score (High → Low)</option>
+                            <option value="semantic_desc">Semantic Similarity (/30)</option>
+                            <option value="object_desc">Object Accuracy (/25)</option>
+                            <option value="comp_desc">Composition (/20)</option>
+                            <option value="color_desc">Color & Lighting (/15)</option>
+                            <option value="details_desc">Fine Details (/10)</option>
+                            <option value="id_asc">Participant ID (A → Z)</option>
+                        </select>
+                    </div>
+
+                    <div class="table-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnExportCsv">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                            Export CSV
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnExportJson">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                            Export JSON
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnPrintScorecards">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                <rect x="6" y="14" width="12" height="8"></rect>
+                            </svg>
+                            Print Scorecards
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnExportAudit" title="Download verifiable cryptographic audit metadata">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            Audit Log
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-scroll-wrapper">
+                    <table class="leaderboard-table" id="leaderboardTable">
+                        <thead>
+                            <tr>
+                                <th class="th-rank">Rank</th>
+                                <th class="th-participant">Participant</th>
+                                <th class="th-preview">Visual</th>
+                                <th class="th-cat">Semantic<br><span class="th-max">/30</span></th>
+                                <th class="th-cat">Object Acc.<br><span class="th-max">/25</span></th>
+                                <th class="th-cat">Composition<br><span class="th-max">/20</span></th>
+                                <th class="th-cat">Color & Light<br><span class="th-max">/15</span></th>
+                                <th class="th-cat">Fine Details<br><span class="th-max">/10</span></th>
+                                <th class="th-score">Final Score<br><span class="th-max">/100</span></th>
+                                <th class="th-tier">Match Level</th>
+                                <th class="th-action">Report</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody">
+                            <!-- Injected rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Participant Dossier Inspection Modal -->
+    <div class="modal-backdrop hidden" id="dossierModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="badge badge-accent" id="modalRankBadge">RANK #1</span>
+                    <span class="badge badge-tier" id="modalTierBadge">VERY STRONG MATCH</span>
+                    <span class="badge badge-tied hidden" id="modalTiedBadge">TIED</span>
+                    <h3 id="modalParticipantTitle">OFFICIAL JUDGING REPORT: P01</h3>
+                </div>
+                <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Visual Comparison Modes Toolbar -->
+                <div class="visual-modes-toolbar">
+                    <div class="view-mode-tabs">
+                        <button type="button" class="view-tab active" data-mode="side">👁️ Side by Side</button>
+                        <button type="button" class="view-tab" data-mode="diff">🎨 Difference Heatmap</button>
+                        <button type="button" class="view-tab" data-mode="overlay">🔲 Opacity Overlay</button>
+                    </div>
+                    <div class="overlay-slider-wrap hidden" id="overlaySliderWrap">
+                        <span>Ref</span>
+                        <input type="range" id="overlayOpacitySlider" min="0" max="100" value="50">
+                        <span>Part</span>
+                    </div>
+                </div>
+
+                <!-- Visual Comparison Area -->
+                <div class="comparison-container" id="comparisonContainer">
+                    <!-- Standard Side-by-side mode -->
+                    <div class="comparison-row" id="sideBySideRow">
+                        <div class="comp-col">
+                            <span class="comp-label">ORIGINAL REFERENCE</span>
+                            <div class="comp-frame">
+                                <img id="modalRefImg" src="" alt="Original Reference">
+                            </div>
+                        </div>
+                        <div class="comp-col">
+                            <span class="comp-label" id="modalPartLabel">PARTICIPANT RECREATION</span>
+                            <div class="comp-frame">
+                                <img id="modalPartImg" src="" alt="Participant Recreation">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Single Canvas for Difference/Overlay Mode -->
+                    <div class="single-comp-frame hidden" id="singleCanvasFrame">
+                        <canvas id="compCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Total Score & Category Breakdown Card -->
+                <div class="modal-scores-card">
+                    <div class="modal-total-score">
+                        <span class="modal-score-label">FINAL SCORE</span>
+                        <span class="modal-score-num" id="modalTotalScore">0.0</span>
+                        <span class="modal-score-max">/ 100</span>
+                        <span class="modal-tier-sublabel" id="modalTierSublabel">Exceptional match</span>
+                    </div>
+                    <div class="modal-bars-grid">
+                        <div class="score-bar-group">
+                            <div class="score-bar-header">
+                                <span>Semantic Similarity</span>
+                                <span class="score-val" id="modalSemVal">0.0 / 30</span>
+                            </div>
+                            <div class="score-track"><div class="score-fill fill-cyan" id="modalSemBar"></div></div>
+                        </div>
+
+                        <div class="score-bar-group">
+                            <div class="score-bar-header">
+                                <span>Object / Element Accuracy</span>
+                                <span class="score-val" id="modalObjVal">0.0 / 25</span>
+                            </div>
+                            <div class="score-track"><div class="score-fill fill-purple" id="modalObjBar"></div></div>
+                        </div>
+
+                        <div class="score-bar-group">
+                            <div class="score-bar-header">
+                                <span>Composition & Spatial</span>
+                                <span class="score-val" id="modalCompVal">0.0 / 20</span>
+                            </div>
+                            <div class="score-track"><div class="score-fill fill-blue" id="modalCompBar"></div></div>
+                        </div>
+
+                        <div class="score-bar-group">
+                            <div class="score-bar-header">
+                                <span>Color & Lighting</span>
+                                <span class="score-val" id="modalColorVal">0.0 / 15</span>
+                            </div>
+                            <div class="score-track"><div class="score-fill fill-amber" id="modalColorBar"></div></div>
+                        </div>
+
+                        <div class="score-bar-group">
+                            <div class="score-bar-header">
+                                <span>Fine Details & Textures</span>
+                                <span class="score-val" id="modalDetVal">0.0 / 10</span>
+                            </div>
+                            <div class="score-track"><div class="score-fill fill-green" id="modalDetBar"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 1: Why Did This Image Get This Score? -->
+                <div class="judge-section-card explanation-highlight-card">
+                    <div class="judge-section-header">
+                        <span class="judge-section-icon">💡</span>
+                        <h4>WHY DID THIS IMAGE GET THIS SCORE?</h4>
+                    </div>
+                    <p class="judge-explanation-text" id="modalOverallExplanation">
+                        Analyzing comparison rationale...
+                    </p>
+                    <div class="performance-areas-row">
+                        <div class="perf-area-group">
+                            <span class="perf-label">STRONGEST AREAS:</span>
+                            <div class="perf-tags" id="modalStrongestAreas">
+                                <!-- Tags injected -->
+                            </div>
+                        </div>
+                        <div class="perf-area-group">
+                            <span class="perf-label">AREAS TO IMPROVE:</span>
+                            <div class="perf-tags" id="modalAreasToImprove">
+                                <!-- Tags injected -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Strengths & Differences Dual Panel -->
+                <div class="strengths-diffs-grid">
+                    <div class="judge-section-card card-strengths-panel">
+                        <div class="judge-section-header">
+                            <span class="judge-section-icon text-emerald">✓</span>
+                            <h4>KEY STRENGTHS</h4>
+                        </div>
+                        <ul class="judge-bullet-list strengths-list" id="modalStrengthsChecklist">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <div class="judge-section-card card-differences-panel">
+                        <div class="judge-section-header">
+                            <span class="judge-section-icon text-amber">△</span>
+                            <h4>DIFFERENCES & DEDUCTIONS</h4>
+                        </div>
+                        <ul class="judge-bullet-list differences-list" id="modalDifferencesChecklist">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Section 3: Category Rationales -->
+                <div class="judge-section-card">
+                    <div class="judge-section-header">
+                        <span class="judge-section-icon">📋</span>
+                        <h4>CATEGORY-BY-CATEGORY JUSTIFICATION</h4>
+                    </div>
+                    <div class="category-rationales-grid" id="modalCategoryRationales">
+                        <!-- Injected -->
+                    </div>
+                </div>
+
+                <!-- Section 4: Key Reference Elements Analysis -->
+                <div class="judge-section-card">
+                    <div class="judge-section-header">
+                        <span class="judge-section-icon">🎯</span>
+                        <h4>KEY REFERENCE ELEMENTS & RETENTION</h4>
+                    </div>
+                    <div class="key-elements-table-wrapper">
+                        <table class="key-elements-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Reference Object</th>
+                                    <th>Importance Tier</th>
+                                    <th>Observed Match Status & Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalKeyElementsTableBody">
+                                <!-- Injected -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 5: Structured Comparison Evidence Grid -->
+                <div class="evidence-section-toggle">
+                    <button type="button" class="btn-toggle-evidence" id="btnToggleEvidenceGrid">
+                        <span>Detailed Low-Level Comparison Metrics</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="evidence-grid" id="modalEvidenceGrid">
+                    <!-- Matched Elements -->
+                    <div class="evidence-card card-matched">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">✓</span> MATCHED ELEMENTS
+                        </div>
+                        <ul class="evidence-list" id="modalMatchedElements">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Partial Matches -->
+                    <div class="evidence-card card-partial">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">~</span> PARTIAL MATCHES
+                        </div>
+                        <ul class="evidence-list" id="modalPartialElements">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Missing Elements -->
+                    <div class="evidence-card card-missing">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">✗</span> MISSING ELEMENTS
+                        </div>
+                        <ul class="evidence-list" id="modalMissingElements">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Unexpected Major Objects -->
+                    <div class="evidence-card card-unexpected">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">!</span> UNEXPECTED / EXTRA OBJECTS
+                        </div>
+                        <ul class="evidence-list" id="modalUnexpectedElements">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Composition Differences -->
+                    <div class="evidence-card card-composition">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">⬌</span> COMPOSITION DIFFERENCES
+                        </div>
+                        <ul class="evidence-list" id="modalCompDiffs">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Color Differences -->
+                    <div class="evidence-card card-color">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">🎨</span> COLOR & LIGHTING DIFFERENCES
+                        </div>
+                        <ul class="evidence-list" id="modalColorDiffs">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Detail Differences -->
+                    <div class="evidence-card card-details">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">🔍</span> FINE DETAIL DIFFERENCES
+                        </div>
+                        <ul class="evidence-list" id="modalDetailDiffs">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+
+                    <!-- Standout Strengths -->
+                    <div class="evidence-card card-strengths">
+                        <div class="evidence-card-title">
+                            <span class="evidence-icon">★</span> STANDOUT STRENGTHS
+                        </div>
+                        <ul class="evidence-list" id="modalStrengths">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Human Review & Override Banner in Dossier -->
+                <div class="override-alert-banner hidden" id="modalOverrideBanner">
+                    <div class="override-alert-header">
+                        <span class="badge badge-accent">HUMAN OVERRIDE ACTIVE</span>
+                        <span class="text-muted" id="modalOverrideMeta">Recorded by Lead Organizer</span>
+                    </div>
+                    <p class="override-reason-text" id="modalOverrideReason">Reason: ...</p>
+                    <div class="override-scores-compare">
+                        <span>Original AI Score: <strong id="modalOriginalAiScore">0.0</strong></span>
+                        <span class="text-cyan">→ Final Override Score: <strong id="modalOverrideScore">0.0</strong></span>
+                    </div>
+                </div>
+
+                <!-- Dossier Actions: Flag & Override -->
+                <div class="dossier-actions-bar">
+                    <button type="button" class="btn btn-secondary btn-sm" id="modalBtnFlagReview">
+                        <span id="modalFlagIcon">🚩</span>
+                        <span id="modalFlagText">Flag for Review</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="modalBtnOverrideScore">
+                        <span>✏️</span>
+                        <span>Record Human Override</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Human Score Override Dialog Modal -->
+    <div class="modal-backdrop hidden" id="overrideModalBackdrop">
+        <div class="modal-dialog modal-dialog-sm" style="max-width: 460px;">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="badge badge-accent">HUMAN OVERRIDE</span>
+                    <h3 id="overrideModalTitle">Score Override: P01</h3>
+                </div>
+                <button type="button" class="modal-close" id="overrideModalCloseBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" style="font-size: 12px; margin-bottom: 12px;">
+                    Preserves the original AI score and audit logs the human override with explicit rationale.
+                </p>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Original AI Score</label>
+                    <input type="text" class="cyber-input" id="overrideOriginalAiVal" readonly style="opacity: 0.7;">
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Human Override Score (0–100)</label>
+                    <input type="number" class="cyber-input" id="overrideScoreInput" min="0" max="100" step="0.1" placeholder="e.g. 86.5">
+                </div>
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Required Organizer Justification</label>
+                    <textarea class="cyber-input" id="overrideReasonInput" rows="3" placeholder="Explain why the score was adjusted (e.g. AI underweighted spatial memory of main subject)..."></textarea>
+                </div>
+                <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnCancelOverride">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="btnSaveOverride">Save Override</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Calibration & Human-AI Alignment Hub Modal -->
+    <div class="modal-backdrop hidden" id="calibrationModalBackdrop">
+        <div class="modal-dialog modal-dialog-lg" id="calibrationModalDialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="badge badge-purple">CALIBRATION HUB</span>
+                    <h3 id="calibModalTitle">Scoring Calibration & Human-AI Alignment</h3>
+                </div>
+                <button type="button" class="modal-close" id="calibModalCloseBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Navigation Tabs -->
+                <div class="calib-tabs" id="calibMainTabs">
+                    <button type="button" class="calib-tab active" data-tab="blind">👁️ Blind Human Evaluation</button>
+                    <button type="button" class="calib-tab" data-tab="analytics">📊 Calibration Analytics</button>
+                    <button type="button" class="calib-tab" data-tab="absim">⚖️ A/B Weight Simulator</button>
+                    <button type="button" class="calib-tab" data-tab="diagnostics">🔍 Feature Diagnostics</button>
+                </div>
+
+                <!-- Tab 1: Blind Human Evaluation Station -->
+                <div class="calib-pane" id="paneBlindEval">
+                    <div class="calib-controls-bar">
+                        <label>Sample Participant to Rate:</label>
+                        <select class="cyber-select" id="blindParticipantSelect">
+                            <option value="">Select participant to evaluate...</option>
+                        </select>
+                        <span class="badge badge-subtle" id="blindStatusBadge">PENDING EVALUATION</span>
+                    </div>
+
+                    <div class="blind-eval-layout" id="blindEvalLayout">
+                        <div class="blind-visual-comparison">
+                            <div class="comp-col">
+                                <span class="comp-label">ORIGINAL REFERENCE</span>
+                                <div class="comp-frame">
+                                    <img id="blindRefImg" src="" alt="Reference Image">
+                                </div>
+                            </div>
+                            <div class="comp-col">
+                                <span class="comp-label" id="blindPartLabel">PARTICIPANT RECREATION</span>
+                                <div class="comp-frame">
+                                    <img id="blindPartImg" src="" alt="Participant Recreation">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Blind Human Rating Form -->
+                        <div class="blind-form-card">
+                            <div class="blind-form-header">
+                                <h4>Human Evaluator Assessment (30-Second Memory Principle)</h4>
+                                <span class="blind-lock-tag" id="blindLockTag">🔒 AI Score Hidden to Prevent Bias</span>
+                            </div>
+
+                            <div class="form-group-score">
+                                <div class="score-input-header">
+                                    <label>Overall Human Score (0–100):</label>
+                                    <span class="score-input-badge text-cyan" id="blindOverallBadge">75.0</span>
+                                </div>
+                                <input type="range" class="cyber-range" id="blindOverallSlider" min="0" max="100" step="0.5" value="75.0">
+                            </div>
+
+                            <div class="blind-categories-grid">
+                                <div class="cat-input-group">
+                                    <div class="cat-hdr"><span>Semantic Similarity (/30)</span><span id="blindSemBadge" class="cat-val">22.5</span></div>
+                                    <input type="range" class="cyber-range-sm" id="blindSemSlider" min="0" max="30" step="0.5" value="22.5">
+                                </div>
+                                <div class="cat-input-group">
+                                    <div class="cat-hdr"><span>Object Accuracy (/25)</span><span id="blindObjBadge" class="cat-val">18.5</span></div>
+                                    <input type="range" class="cyber-range-sm" id="blindObjSlider" min="0" max="25" step="0.5" value="18.5">
+                                </div>
+                                <div class="cat-input-group">
+                                    <div class="cat-hdr"><span>Composition (/20)</span><span id="blindCompBadge" class="cat-val">15.0</span></div>
+                                    <input type="range" class="cyber-range-sm" id="blindCompSlider" min="0" max="20" step="0.5" value="15.0">
+                                </div>
+                                <div class="cat-input-group">
+                                    <div class="cat-hdr"><span>Color & Lighting (/15)</span><span id="blindColBadge" class="cat-val">11.0</span></div>
+                                    <input type="range" class="cyber-range-sm" id="blindColSlider" min="0" max="15" step="0.5" value="11.0">
+                                </div>
+                                <div class="cat-input-group">
+                                    <div class="cat-hdr"><span>Fine Details (/10)</span><span id="blindDetBadge" class="cat-val">7.5</span></div>
+                                    <input type="range" class="cyber-range-sm" id="blindDetSlider" min="0" max="10" step="0.5" value="7.5">
+                                </div>
+                            </div>
+
+                            <div class="form-group-comments">
+                                <label>Evaluator Notes & Qualitative Memory Rationale:</label>
+                                <textarea class="cyber-input" id="blindCommentsInput" rows="2" placeholder="e.g. Correct main subject and objects, but the spatial arrangement is slightly shifted..."></textarea>
+                            </div>
+
+                            <button type="button" class="btn btn-primary btn-block" id="btnSubmitBlindEval">
+                                <span>Submit Evaluation & Reveal AI Score Comparison</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Revealed Comparison Card -->
+                    <div class="revealed-comparison-card hidden" id="revealedComparisonCard">
+                        <div class="revealed-header">
+                            <span class="badge badge-accent">COMPARISON REVEALED</span>
+                            <h4 id="revealedTitle">Human vs AI Scoring Breakdown: P01</h4>
+                        </div>
+                        <div class="revealed-table-wrap">
+                            <table class="key-elements-table" style="font-size: 12px;">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Human Score</th>
+                                        <th>AI Score</th>
+                                        <th>Difference</th>
+                                        <th>Alignment Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="revealedTableBody">
+                                    <!-- Injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Calibration Analytics & Disagreement Analysis -->
+                <div class="calib-pane hidden" id="paneAnalytics">
+                    <div class="analytics-top-bar">
+                        <button type="button" class="btn btn-primary btn-sm" id="btnRunFullCalibration">
+                            <span>🔄 Compute Calibration Metrics</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnExportCalibReport">
+                            <span>📥 Export Calibration Report (MD)</span>
+                        </button>
+                    </div>
+
+                    <!-- Analytics Stats Grid -->
+                    <div class="calib-stats-grid" id="calibStatsGrid">
+                        <!-- Stat cards injected dynamically -->
+                    </div>
+
+                    <!-- Calibration Decision Banner -->
+                    <div class="calib-decision-banner" id="calibDecisionBanner">
+                        <!-- Decision & Rationale injected -->
+                    </div>
+
+                    <!-- Category MAE Progress Bars -->
+                    <div class="card calib-section-card" style="margin-top: 15px;">
+                        <h4 style="font-size: 13px; margin-bottom: 10px; color: var(--text-cyan);">Category-Level Mean Absolute Errors (MAE)</h4>
+                        <div class="category-mae-bars" id="categoryMaeBars">
+                            <!-- Injected -->
+                        </div>
+                    </div>
+
+                    <!-- Significant Disagreements Table -->
+                    <div class="card calib-section-card" style="margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="font-size: 13px; color: var(--text-amber);">⚠ Significant Disagreements (|Human - AI| > 10 pts)</h4>
+                            <span class="badge badge-subtle" id="disagreementCountBadge">0 Disagreements</span>
+                        </div>
+                        <div class="table-scroll-wrapper">
+                            <table class="key-elements-table" style="font-size: 11px;">
+                                <thead>
+                                    <tr>
+                                        <th>Participant</th>
+                                        <th>Human</th>
+                                        <th>AI</th>
+                                        <th>Difference</th>
+                                        <th>Primary Divergence Area</th>
+                                        <th>Evaluator Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="disagreementsTableBody">
+                                    <!-- Injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: A/B Weight Simulator -->
+                <div class="calib-pane hidden" id="paneAbSim">
+                    <div class="ab-sim-intro">
+                        <h4>A/B Scoring Configuration Simulator (Developer Mode)</h4>
+                        <p class="text-muted" style="font-size: 12px;">
+                            Simulate alternative category scoring weights against human ratings. Notice: Avoid overfitting category weights to small calibration datasets (N &lt; 15).
+                        </p>
+                    </div>
+
+                    <div class="ab-sliders-grid">
+                        <div class="ab-slider-item">
+                            <div class="cat-hdr"><span>Semantic Weight</span><span id="abSemVal" class="cat-val">30</span></div>
+                            <input type="range" class="cyber-range" id="abSemSlider" min="0" max="60" step="1" value="30">
+                        </div>
+                        <div class="ab-slider-item">
+                            <div class="cat-hdr"><span>Object Weight</span><span id="abObjVal" class="cat-val">25</span></div>
+                            <input type="range" class="cyber-range" id="abObjSlider" min="0" max="60" step="1" value="25">
+                        </div>
+                        <div class="ab-slider-item">
+                            <div class="cat-hdr"><span>Composition Weight</span><span id="abCompVal" class="cat-val">20</span></div>
+                            <input type="range" class="cyber-range" id="abCompSlider" min="0" max="60" step="1" value="20">
+                        </div>
+                        <div class="ab-slider-item">
+                            <div class="cat-hdr"><span>Color/Lighting Weight</span><span id="abColVal" class="cat-val">15</span></div>
+                            <input type="range" class="cyber-range" id="abColSlider" min="0" max="60" step="1" value="15">
+                        </div>
+                        <div class="ab-slider-item">
+                            <div class="cat-hdr"><span>Detail Weight</span><span id="abDetVal" class="cat-val">10</span></div>
+                            <input type="range" class="cyber-range" id="abDetSlider" min="0" max="60" step="1" value="10">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <button type="button" class="btn btn-primary btn-sm" id="btnRunAbSim">Simulate Alternative Configuration</button>
+                    </div>
+
+                    <div class="ab-comparison-results hidden" id="abComparisonResults" style="margin-top: 15px;">
+                        <!-- Comparative metrics card injected -->
+                    </div>
+                </div>
+
+                <!-- Tab 4: Feature Diagnostics (Developer) -->
+                <div class="calib-pane hidden" id="paneDiagnostics">
+                    <div class="calib-controls-bar">
+                        <label>Participant to Inspect:</label>
+                        <select class="cyber-select" id="calibParticipantSelect">
+                            <option value="">Select participant...</option>
+                        </select>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnRunCalibInspect">Inspect Features</button>
+                    </div>
+
+                    <div id="calibResultsArea" class="hidden">
+                        <div class="calib-summary-banner" id="calibSummaryBanner">
+                            <!-- Summary metrics -->
+                        </div>
+
+                        <div class="calib-tab-content" id="calibTabContent">
+                            <div class="calib-pane-inner" id="calibPaneObjects">
+                                <!-- Injected object bounding boxes table -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

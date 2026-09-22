@@ -1,0 +1,45 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Unit test / coverage reports
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments & sensitive files
+.env
+.env.*
+.venv/
+venv/
+ENV/
+
+# Editor & IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+[Dd]esktop.ini
+
+# Application runtime uploads and sessions
+sessions/*.json
+!sessions/.gitkeep
+
+uploads/participants/*
+!uploads/participants/.gitkeep
+
+uploads/reference/*
+!uploads/reference/.gitkeep
