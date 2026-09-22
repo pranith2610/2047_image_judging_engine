@@ -119,6 +119,32 @@ python -m pytest tests/ -v
 
 ---
 
+## 🌐 Cloud Deployment (1-Click & Free Tier)
+
+THE 2047 is configured for seamless deployment on free-tier Python hosting platforms:
+
+### Option 1: Deploy on Render.com (Recommended)
+1. Go to [Render.com](https://render.com) and create a free account.
+2. Click **New +** → **Web Service** → Connect your GitHub repository (`pranith2610/2047_image_judging_engine`).
+3. Render will automatically detect `render.yaml` and set:
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. Click **Deploy Web Service** — your live URL will be active in minutes!
+
+### Option 2: Deploy on Railway.app
+1. Go to [Railway.app](https://railway.app) and sign in with GitHub.
+2. Click **New Project** → **Deploy from GitHub repo** → select `2047_image_judging_engine`.
+3. Railway automatically detects the `Procfile` and launches the application.
+
+### Option 3: Deploy with Docker
+```bash
+docker build -t the-2047-engine .
+docker run -p 8000:8000 the-2047-engine
+```
+
+---
+
 ## 🔌 Extending With Deep Learning Models
 
 Every component inherits from an abstract base class (`abc.ABC`). In future iterations:

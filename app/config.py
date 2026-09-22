@@ -37,6 +37,8 @@ CATEGORY_WEIGHTS = {
 }
 TOTAL_POINTS = 100.0
 
+import os
+
 # Server configuration
-HOST = "127.0.0.1"
-PORT = 8000
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", 8000))
